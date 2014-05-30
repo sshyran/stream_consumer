@@ -27,7 +27,7 @@
 ###########################################################################
 
 module StreamConsumer
-  require 'stream_consumer/version'
-  require 'stream_consumer/consumer'
-  require 'stream_consumer/railtie' if defined?(Rails)
+  class Consumer
+
+  end
 end

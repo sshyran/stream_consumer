@@ -26,8 +26,12 @@
 ##
 ###########################################################################
 
+require 'stream_consumer'
+
 module StreamConsumer
-  require 'stream_consumer/version'
-  require 'stream_consumer/consumer'
-  require 'stream_consumer/railtie' if defined?(Rails)
+  class Railties < ::Rails::Railtie
+    initializer 'railties.configure_rails_initialization' do
+      StreamConsumer.logger = Rails.logger
+    end
+  end
 end
