@@ -26,12 +26,18 @@
 ##
 ###########################################################################
 
-require 'stream_consumer'
-
 module StreamConsumer
-  class Railties < ::Rails::Railtie
-    initializer 'railties.configure_rails_initialization' do
-      StreamConsumer.logger = Rails.logger
+  module Producer
+    
+    class DataProducer
+
+      def initialize
+      end
+
+      def produce
+      end
+
     end
+
   end
 end

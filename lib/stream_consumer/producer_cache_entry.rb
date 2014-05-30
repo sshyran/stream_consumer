@@ -27,17 +27,23 @@
 ###########################################################################
 
 module StreamConsumer
-  require 'stream_consumer/version'
-  require 'stream_consumer/logger'
-  require 'stream_consumer/production_job'
-  require 'stream_consumer/producer_cache_entry'
-  require 'stream_consumer/stats'
-  require 'stream_consumer/updater/stats_updater'
-  require 'stream_consumer/producer/data_consumer'
-  if defined?(JRUBY_VERSION) then
-    require 'stream_consumer/adapter/mysql_jruby_adapter'
-  else
-    require 'stream_consumer/adapter/mysql_mri_adapter'
+
+  class ProducerCacheEntry
+
+    attr_reader :producer
+
+    PRODUCER_CACHE_EXPIRATION_SECONDS = 120
+
+    def initialize(producer)
+      @producer = producer
+      @timestamp = Time.now
+    end
+
+    def is_expired?
+      @producer.nil? or (Time.now - @timestamp) > PRODUCER_CACHE_EXPIRATION_SECONDS
+    end
+
   end
-  require 'stream_consumer/consumer'
+
 end
+

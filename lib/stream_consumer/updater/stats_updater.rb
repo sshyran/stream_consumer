@@ -27,17 +27,17 @@
 ###########################################################################
 
 module StreamConsumer
-  require 'stream_consumer/version'
-  require 'stream_consumer/logger'
-  require 'stream_consumer/production_job'
-  require 'stream_consumer/producer_cache_entry'
-  require 'stream_consumer/stats'
-  require 'stream_consumer/updater/stats_updater'
-  require 'stream_consumer/producer/data_consumer'
-  if defined?(JRUBY_VERSION) then
-    require 'stream_consumer/adapter/mysql_jruby_adapter'
-  else
-    require 'stream_consumer/adapter/mysql_mri_adapter'
+  module Updater
+    
+    class StatsUpdater
+
+      def initialize
+      end
+
+      def update
+      end
+
+    end
+
   end
-  require 'stream_consumer/consumer'
 end
