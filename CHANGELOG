@@ -1,0 +1,5 @@
+stream_consumer 0.1.0 (5.30.2014)
+========================================
+* initial commit
+* Multi-threaded HTTP stream consumer, with asynchronous spooling and multi-threaded production
+* unit test suite
