@@ -27,23 +27,32 @@
 ###########################################################################
 
 module StreamConsumer
+  module Updater
 
-  class ProducerCacheEntry
+    class MysqlStatsUpdater
 
-    attr_reader :producer
+      def initialize
+	if !@options[:database_config].nil? then
+	  logger.info "Database configuration: #{@options[:database_config]}"
+	  @database_adapter = MySqlAdapter.new(@options[:database_config], logger)
+	else
+	  @database_adapter = nil
+	end
+      end
 
-    PRODUCER_CACHE_EXPIRATION_SECONDS = 120
+      def update(checkpoint)
+	query = "insert into `inbound_stats_v2` (`created_at`, `inbound_id`, `consumed_records_per_sec`, `consumed_kbytes_per_sec`, `produced_records_per_sec`, `message_lag`) values ('#{params[:timestamp].utc.strftime('%Y-%m-%d %H:%M:%S')}', #{@inbound[:inbound_id]}, #{params[:messages_consumed_per_sec]}, #{params[:kbytes_consumed_per_sec]}, #{params[:messages_produced_per_sec]}, #{params[:lag]})"
+	@database_adapter.update(query)
+      end
 
-    def initialize(producer)
-      @producer = producer
-      @timestamp = Time.now
-    end
+      protected
 
-    def is_expired?
-      @producer.nil? or (Time.now - @timestamp) > PRODUCER_CACHE_EXPIRATION_SECONDS
+      def get_inbound(topic_name)
+	query = "select t1.id,t2.* from inbounds t1 inner join topics t2 where t2.name='#{topic_name}' and t1.id = t2.inbound_id;"
+	@database_adapter.query(query).first
+      end
+
     end
 
   end
-
 end
-

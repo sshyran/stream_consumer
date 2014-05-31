@@ -29,19 +29,22 @@
 module StreamConsumer
   module Producer
 
-    class DataProducer
+    class ProducerCacheEntry
 
-      def initialize
+      attr_reader :producer
+
+      PRODUCER_CACHE_EXPIRATION_SECONDS = 120
+
+      def initialize(producer)
+	@producer = producer
+	@timestamp = Time.now
       end
 
-      def format(line)
-      end
-
-      def produce(messages)
+      def is_expired?
+	@producer.nil? or (Time.now - @timestamp) > PRODUCER_CACHE_EXPIRATION_SECONDS
       end
 
     end
 
   end
-
 end

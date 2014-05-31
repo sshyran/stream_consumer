@@ -29,11 +29,11 @@
 module StreamConsumer
   require 'stream_consumer/version'
   require 'stream_consumer/logger'
-  require 'stream_consumer/production_job'
-  require 'stream_consumer/producer_cache_entry'
   require 'stream_consumer/stats'
+  require 'stream_consumer/production_job'
   require 'stream_consumer/updater/stats_updater'
-  require 'stream_consumer/producer/data_consumer'
+  require 'stream_consumer/producer/producer_cache_entry'
+  require 'stream_consumer/producer/data_producer'
   if defined?(JRUBY_VERSION) then
     require 'stream_consumer/adapter/mysql_jruby_adapter'
   else

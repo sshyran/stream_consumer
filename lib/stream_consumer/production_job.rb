@@ -30,15 +30,15 @@ module StreamConsumer
 
   class ProductionJob
 
-    attr_reader :topic_name
+    attr_reader :run_id
     attr_reader :messages
     attr_reader :params
     attr_reader :id
 
     @@production_job_id = 1
 
-    def initialize(topic_name, messages, params)
-      @topic_name = topic_name
+    def initialize(run_id, messages, params)
+      @run_id = run_id
       @messages = messages
       @params = params
       @id = @@production_job_id
@@ -49,7 +49,7 @@ module StreamConsumer
       @messages.clear
       @params.clear
       @messages = nil
-      @topic_name = nil
+      @run_id = nil
       @params = nil
     end
 
