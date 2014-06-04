@@ -29,28 +29,15 @@
 module StreamConsumer
   module Updater
 
-    class MysqlStatsUpdater < StatsUpdater
+    class ConsoleStatsUpdater < StatsUpdater
 
-      def initialize(topic_name)
-	if !@options[:database_config].nil? then
-	  logger.info "Database configuration: #{@options[:database_config]}"
-	  @database_adapter = MySqlAdapter.new(@options[:database_config], logger)
-	else
-	  @database_adapter = nil
-	end
-	@inbound_id = get_inbound(topic_name)
+      def initialize
+	@inbound_id = "inbound_id"
       end
 
       def update(checkpoint)
 	query = "insert into `inbound_stats_v2` (`created_at`, `inbound_id`, `consumed_records_per_sec`, `consumed_kbytes_per_sec`, `produced_records_per_sec`, `message_lag`) values ('#{params[:timestamp].utc.strftime('%Y-%m-%d %H:%M:%S')}', #{@inbound_id}, #{params[:messages_consumed_per_sec]}, #{params[:kbytes_consumed_per_sec]}, #{params[:messages_produced_per_sec]}, #{params[:lag]})"
-	@database_adapter.update(query)
-      end
-
-      protected
-
-      def get_inbound(topic_name)
-	query = "select t1.id,t2.* from inbounds t1 inner join topics t2 where t2.name='#{topic_name}' and t1.id = t2.inbound_id;"
-	@database_adapter.query(query).first
+	logger.info "#{query}"
       end
 
     end

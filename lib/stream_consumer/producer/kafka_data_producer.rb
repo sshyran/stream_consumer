@@ -31,7 +31,7 @@ require 'poseidon'
 module StreamConsumer
   module Producer
 
-    class KafkaDataProducer
+    class KafkaDataProducer < DataProducer
 
       def initialize
 	@producers = (1..@options[:num_producer_threads]).map { |i| ProducerCacheEntry.new(nil) }

@@ -50,7 +50,7 @@ module StreamConsumer
       @producer_threads = (1..@options[:num_producer_threads]).map { |i| Thread.new(i) { |thread_id| produce_messages(thread_id) } }
 
       @stats = Stats.new(@options[:client_id])
-      @stats.run { |checkpoint| @options[:stats_updater].update(checkpoint) unless @options[:stats_updater].nil? }
+      @stats.start { |checkpoint| @options[:stats_updater].update(checkpoint) unless @options[:stats_updater].nil? }
 
       @running = true
 
@@ -100,8 +100,8 @@ module StreamConsumer
       @min_batch_seconds = run_options[:min_batch_seconds]
 
       logger.info "-----------------------------------------------------------------"
-      logger.info "url: #{url}"
-      logger.info "run_id: #{run_id}"
+      logger.info "url: #{run_options[:url]}"
+      logger.info "run_id: #{@run_id}"
       logger.info "consumer threads: #{@num_consumer_threads}"
       logger.info "producer threads: #{@num_producer_threads}"
       logger.info "-----------------------------------------------------------------"
