@@ -21,7 +21,7 @@ VALID_RECORD_PREFIX = '{"created_at":"'
 DATE_FORMAT_SAMPLE = 'Sat Jan 11 00:19:26 +0000 2014'
 SIGNAL_PREFIX_ARRAY = [ '{"warning":', '{"disconnect":' ]
 TOPIC_NAME="twitter_firehose"
-TIMEOUT_SEC = 45
+TIMEOUT_SEC = 75
 
 updater = StreamConsumer::Updater::ConsoleStatsUpdater.new
 producer = StreamConsumer::Producer::ConsoleDataProducer.new

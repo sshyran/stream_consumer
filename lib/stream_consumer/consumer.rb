@@ -41,19 +41,9 @@ module StreamConsumer
     # :stats_updater
     # :data_producer
     def initialize(options)
-      
       HttpStreamingClient.logger = logger
-
       @options = options
-
-      @running = true
-
       @production_queue = Queue.new
-      @producer_threads = (1..@options[:num_producer_threads]).map { |i| Thread.new(i) { |thread_id| produce_messages(thread_id) } }
-
-      @stats = Stats.new(@options[:client_id])
-      @stats.start { |checkpoint| @options[:stats_updater].update(checkpoint) unless @options[:stats_updater].nil? }
-
     end
 
     def halt
@@ -66,6 +56,7 @@ module StreamConsumer
     def produce_messages(thread_id)
       begin
 	startTime = Time.new 
+	logger.info "starting producer #{thread_id} for id #{@run_id}: #{startTime.to_s}"
 	while @running 
 	  job = @production_queue.pop
 	  logger.info "Production job accepted: thread #{thread_id}, job id #{job.id}, run id #{job.run_id}"
@@ -111,7 +102,13 @@ module StreamConsumer
       logger.info "consumer threads: #{@options[:num_consumer_threads]}"
       logger.info "producer threads: #{@options[:num_producer_threads]}"
       logger.info "-----------------------------------------------------------------"
+      
+      @running = true
+      
+      @stats = Stats.new(@options[:client_id])
+      @stats.start { |checkpoint| @options[:stats_updater].update(checkpoint) unless @options[:stats_updater].nil? }
 
+      @producer_threads = (1..@options[:num_producer_threads]).map { |i| Thread.new(i) { |thread_id| produce_messages(thread_id) } }
       @consumer_threads = (1..@options[:num_consumer_threads]).map { |i| Thread.new(i) { |ii| consume_messages(ii, &block) } }
 
       @consumer_threads.each { |thread| thread.join }
@@ -206,8 +203,8 @@ module StreamConsumer
 	    message_set_params = { num_records: intervalCount, size_bytes: intervalSize, time_sec: intervalElapsedTime.round(2).to_s, records_per_sec: (intervalCount / intervalElapsedTime).round(2).to_s, kbytes_per_sec: (intervalSize / intervalElapsedTime / 1024).round(2).to_s, message_lag: lag }
 
 	    production_job = ProductionJob.new(@run_id, messages, message_set_params)
+	    logger.info "consumer #{thread_id}:enqueing production job, #{messages.size} messages for #{@run_id}, job id #{production_job.id}, queue length #{@production_queue.length}"
 	    @production_queue << production_job
-	    logger.info "consumer #{thread_id}:production job queued, #{messages.size} messages for #{@run_id}, job id #{production_job.id}, queue length #{@production_queue.length}"
 
 	    production_job = nil
 	    messages = []

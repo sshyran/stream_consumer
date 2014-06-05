@@ -92,6 +92,7 @@ module StreamConsumer
     end
 
     def halt
+      return unless @running
       @running = false
       @thread.wakeup
       @thread.join
@@ -101,6 +102,7 @@ module StreamConsumer
       begin
 	while @running
 	  sleep @checkpoint_interval
+	  break if !@running
 	  cp = checkpoint
 	  logger.info "Checkpoint: #{cp}"
 	  @checkpoint_callback.call(cp) unless @checkpoint_callback.nil?
