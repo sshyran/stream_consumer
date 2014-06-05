@@ -93,8 +93,8 @@ module StreamConsumer
 
     def halt
       @running = false
+      @thread.wakeup
       @thread.join
-      @thread.exit
     end
 
     def process_stats

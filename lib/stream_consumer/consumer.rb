@@ -46,23 +46,26 @@ module StreamConsumer
 
       @options = options
 
+      @running = true
+
       @production_queue = Queue.new
       @producer_threads = (1..@options[:num_producer_threads]).map { |i| Thread.new(i) { |thread_id| produce_messages(thread_id) } }
 
       @stats = Stats.new(@options[:client_id])
       @stats.start { |checkpoint| @options[:stats_updater].update(checkpoint) unless @options[:stats_updater].nil? }
 
-      @running = true
-
     end
 
     def halt
       @running = false
+      @consumer_threads.each { |thread| thread.join }
+      @producer_threads.each { |thread| thread.join }
+      @stats.halt
     end
 
     def produce_messages(thread_id)
       begin
-	logger.info "starting producer #{thread_id} for id #{@run_id}: #{Time.new.to_s}"
+	startTime = Time.new 
 	while @running 
 	  job = @production_queue.pop
 	  logger.info "Production job accepted: thread #{thread_id}, job id #{job.id}, run id #{job.run_id}"
@@ -78,6 +81,8 @@ module StreamConsumer
 	  elapsed_time = Time.new - now
 	  logger.info "#{msg}, production elapsed time: #{elapsed_time} seconds"
 	end
+	logger.info "producer #{thread_id}:shut down complete: #{Time.new.to_s}"
+	logger.info "producer #{thread_id}:total elapsed time: #{(Time.new - startTime).round(2).to_s} seconds"
       rescue Exception => e
 	logger.error "Production job thread #{thread_id}:Exception:#{e}"
       end
@@ -110,7 +115,7 @@ module StreamConsumer
       @consumer_threads = (1..@options[:num_consumer_threads]).map { |i| Thread.new(i) { |ii| consume_messages(ii, &block) } }
 
       @consumer_threads.each { |thread| thread.join }
-      @producer_threads.each { |thread| thread.exit }
+      @producer_threads.each { |thread| thread.join }
       @stats.halt
 
     end

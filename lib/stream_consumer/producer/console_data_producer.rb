@@ -31,8 +31,7 @@ module StreamConsumer
 
     class ConsoleDataProducer < DataProducer
 
-      def initialize(logger)
-	@logger = logger
+      def initialize
 	@count = 0
       end
 
@@ -43,12 +42,6 @@ module StreamConsumer
 
       def produce(thread_id, messages)
 	logger.info "#{messages.size} of #{@count} messages produced for thread #{thread_id}"
-      end
-
-      protected
-
-      def logger
-	@logger
       end
 
     end
