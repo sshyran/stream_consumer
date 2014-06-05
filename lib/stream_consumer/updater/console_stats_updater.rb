@@ -36,8 +36,8 @@ module StreamConsumer
       end
 
       def update(checkpoint)
-	query = "insert into `inbound_stats_v2` (`created_at`, `inbound_id`, `consumed_records_per_sec`, `consumed_kbytes_per_sec`, `produced_records_per_sec`, `message_lag`) values ('#{params[:timestamp].utc.strftime('%Y-%m-%d %H:%M:%S')}', #{@inbound_id}, #{params[:messages_consumed_per_sec]}, #{params[:kbytes_consumed_per_sec]}, #{params[:messages_produced_per_sec]}, #{params[:lag]})"
-	logger.info "#{query}"
+	query = "insert into `inbound_stats_v2` (`created_at`, `inbound_id`, `consumed_records_per_sec`, `consumed_kbytes_per_sec`, `produced_records_per_sec`, `message_lag`) values ('#{checkpoint[:timestamp].utc.strftime('%Y-%m-%d %H:%M:%S')}', #{@inbound_id}, #{checkpoint[:messages_consumed_per_sec]}, #{checkpoint[:kbytes_consumed_per_sec]}, #{checkpoint[:messages_produced_per_sec]}, #{checkpoint[:lag]})"
+	logger.info "Checkpoint: #{query}"
       end
 
     end

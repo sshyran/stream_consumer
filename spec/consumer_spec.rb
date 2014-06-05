@@ -22,7 +22,7 @@ SIGNAL_PREFIX_ARRAY = [ '{"warning":', '{"disconnect":' ]
 TOPIC_NAME="twitter_firehose"
 
 updater = StreamConsumer::Updater::ConsoleStatsUpdater.new
-producer = StreamConsumer::Producer::ConsoleDataProducer.new
+producer = StreamConsumer::Producer::ConsoleDataProducer.new(logger)
 
 describe StreamConsumer::Consumer do
 
@@ -34,7 +34,7 @@ describe StreamConsumer::Consumer do
 	options = { num_producer_threads: 1, num_consumer_threads: 1, client_id: "bluejay_consumer_twitter", stats_updater: updater, data_producer: producer }
 	consumer = StreamConsumer::Consumer.new(options)
 
-	run_options = { url: STREAMURL, options_factory: HttpStreamingClientOptions.new, run_id: TOPIC_NAME, records_per_batch: 100, min_batch_seconds: 20, signal_prefix_array: SIGNAL_PREFIX_ARRAY, reconnect: false }
+	run_options = { url: "#{STREAMURL}?stall_warnings=true", options_factory: HttpStreamingClientOptions.new, run_id: TOPIC_NAME, records_per_batch: 100, min_batch_seconds: 20, signal_prefix_array: SIGNAL_PREFIX_ARRAY, reconnect: false }
 	consumer.run(run_options) { |line,now|
 	  # calculate message arrival lag
 	  # expect records to start with something like this: {"created_at":"Sat Jan 11 00:19:26 +0000 2014",

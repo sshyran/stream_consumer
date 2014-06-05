@@ -62,16 +62,17 @@ module StreamConsumer
 
     def produce_messages(thread_id)
       begin
+	logger.info "starting producer #{thread_id} for id #{@run_id}: #{Time.new.to_s}"
 	while @running 
 	  job = @production_queue.pop
-	  logger.info "Production job accepted: thread #{thread_id}, job id #{job.id}, topic #{job.topic_name}"
+	  logger.info "Production job accepted: thread #{thread_id}, job id #{job.id}, run id #{job.run_id}"
 
 	  now = Time.new
 
 	  @options[:data_producer].produce(thread_id, job.messages) unless @options[:data_producer].nil?
 	  @stats.add_produced(job.messages.size)
 
-	  msg = "#{job.messages.size} messages produced to topic: #{job.topic_name}, job id #{job.id}"
+	  msg = "#{job.messages.size} messages produced to run id #{job.run_id}, job id #{job.id}"
 	  job.clear
 	  job = nil
 	  elapsed_time = Time.new - now
@@ -102,8 +103,8 @@ module StreamConsumer
       logger.info "-----------------------------------------------------------------"
       logger.info "url: #{run_options[:url]}"
       logger.info "run_id: #{@run_id}"
-      logger.info "consumer threads: #{@num_consumer_threads}"
-      logger.info "producer threads: #{@num_producer_threads}"
+      logger.info "consumer threads: #{@options[:num_consumer_threads]}"
+      logger.info "producer threads: #{@options[:num_producer_threads]}"
       logger.info "-----------------------------------------------------------------"
 
       @consumer_threads = (1..@options[:num_consumer_threads]).map { |i| Thread.new(i) { |ii| consume_messages(ii, &block) } }
@@ -134,6 +135,7 @@ module StreamConsumer
 
 	startTime = lastTime = Time.new 
 
+	logger.info "client.get:#{@run_options[:url]}, #{@run_options[:options_factory].get_options}"
 	response = client.get(@run_options[:url], { :options_factory => @run_options[:options_factory] }) { |line|
 
 	  if line.nil? then

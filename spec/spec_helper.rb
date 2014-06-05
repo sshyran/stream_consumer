@@ -14,7 +14,7 @@ require 'stream_consumer'
 RSpec.configure do |config|
 
   StreamConsumer.logger.console = true
-  StreamConsumer.logger.level = Logger::DEBUG
+  StreamConsumer.logger.level = Logger::INFO
   StreamConsumer.logger.logfile = true
   StreamConsumer.logger.tag = "rspec"
 
