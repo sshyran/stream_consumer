@@ -34,7 +34,7 @@ module StreamConsumer
       def initialize
       end
 
-      def update
+      def update(checkpoint)
       end
 
     end

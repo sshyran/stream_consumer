@@ -2,11 +2,6 @@ require 'spec_helper'
 
 require 'stream_consumer/producer/kafka_data_producer'
 
-TOPIC_NAME="stream_consumer_test"
-NUM_PRODUCER_THREADS = 1
-CLIENT_ID = "stream_consumer_rspec"
-KAFKA_BROKER_ARRAY = [ {hostname: "fenway.corp.adobe.com", port: 9092}, {hostname: "wrigley.corp.adobe.com", port: 9092}, {hostname: "candlestick.corp.adobe.com", port: 9092}]
-
 describe StreamConsumer::Producer::KafkaDataProducer do
 
   describe "test kafka data producer" do
