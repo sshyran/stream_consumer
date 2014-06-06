@@ -2,8 +2,8 @@ require 'spec_helper'
 require 'http_streaming_client'
 require 'timeout'
 
-require 'stream_consumer/updater/console_stats_updater'
-require 'stream_consumer/producer/console_data_producer'
+require 'stream_consumer/updater/mysql_stats_updater'
+require 'stream_consumer/producer/kafka_data_producer'
 
 describe StreamConsumer::Consumer do
 
@@ -12,8 +12,10 @@ describe StreamConsumer::Consumer do
     it "should successfully retrieve JSON records from the firehose" do
 
       expect {
-	updater = StreamConsumer::Updater::ConsoleStatsUpdater.new
-	producer = StreamConsumer::Producer::ConsoleDataProducer.new
+
+	updater = StreamConsumer::Updater::MysqlStatsUpdater.new(TOPIC_NAME, DATABASE_CONFIG)
+	producer = StreamConsumer::Producer::KafkaDataProducer.new(NUM_PRODUCER_THREADS, TOPIC_NAME, CLIENT_ID, KAFKA_BROKER_ARRAY)
+
 	options = { num_producer_threads: NUM_PRODUCER_THREADS, num_consumer_threads: NUM_CONSUMER_THREADS, client_id: CLIENT_ID, stats_updater: updater, data_producer: producer }
 	consumer = StreamConsumer::Consumer.new(options)
 
