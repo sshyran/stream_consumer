@@ -33,8 +33,11 @@ module StreamConsumer
 
     class KafkaDataProducer < DataProducer
 
-      def initialize
-	@producers = (1..@options[:num_producer_threads]).map { |i| ProducerCacheEntry.new(nil) }
+      def initialize(num_producer_threads, topic_name, client_id, broker_array)
+	@producers = (1..num_producer_threads).map { |i| ProducerCacheEntry.new(nil) }
+	@topic_name = topic_name
+	@client_id = client_id
+	@broker_array = broker_array
       end
 
       def format(line)
@@ -52,9 +55,8 @@ module StreamConsumer
 
       def get_kafka_broker_pool
 	return @@broker_pool if !@@broker_pool.nil?
-	brokers = get_brokers
 	begin
-	  @@broker_pool = Poseidon::BrokerPool.new(@client_id, brokers.map { |broker| "#{broker[:hostname]}:#{broker[:port]}" })
+	  @@broker_pool = Poseidon::BrokerPool.new(@client_id, @broker_array.map { |broker| "#{broker[:hostname]}:#{broker[:port]}" })
 	  return @@broker_pool
 	rescue Exception => e
 	  logger.error "get_kafka_broker_pool:exception creating broker pool:#{e}"
@@ -93,11 +95,6 @@ module StreamConsumer
 	logger.info "Connecting producer to #{leader[:host]}:#{leader[:port]} for #{topic_name}, thread id #{thread_id}"
 	@producers[thread_id - 1] = ProducerCacheEntry.new(Poseidon::Producer.new(["#{leader[:host]}:#{leader[:port]}"], @client_id, :type => :sync, :compression_codec => :gzip, :metadata_refresh_interval_ms => 120000))
 	return @producers[thread_id - 1].producer
-      end
-
-      def get_brokers
-	query = "select * from brokers"
-	@database_adapter.query(query)
       end
 
     end

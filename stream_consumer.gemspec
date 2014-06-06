@@ -24,6 +24,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "simplecov", '~> 0.7', '>= 0.7.1'
   spec.add_development_dependency "coveralls", '~> 0.7', '>= 0.7.0'
   spec.add_runtime_dependency "http_streaming_client", '~> 0.9.5'
+  spec.add_runtime_dependency "poseidon"
   spec.add_runtime_dependency "jdbc-mysql" if defined?(JRUBY_VERSION)
   spec.add_runtime_dependency "mysql2" if !defined?(JRUBY_VERSION)
 end
