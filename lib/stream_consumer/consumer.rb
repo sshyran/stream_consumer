@@ -203,7 +203,7 @@ module StreamConsumer
 	    message_set_params = { num_records: intervalCount, size_bytes: intervalSize, time_sec: intervalElapsedTime.round(2).to_s, records_per_sec: (intervalCount / intervalElapsedTime).round(2).to_s, kbytes_per_sec: (intervalSize / intervalElapsedTime / 1024).round(2).to_s, message_lag: lag }
 
 	    production_job = ProductionJob.new(@run_id, messages, message_set_params)
-	    logger.info "consumer #{thread_id}:enqueing production job, #{messages.size} messages for #{@run_id}, job id #{production_job.id}, queue length #{@production_queue.length}"
+	    logger.info "consumer #{thread_id}:enqueuing production job, #{messages.size} messages for #{@run_id}, job id #{production_job.id}, queue length #{@production_queue.length}"
 	    @production_queue << production_job
 
 	    production_job = nil
