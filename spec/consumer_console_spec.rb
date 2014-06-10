@@ -12,16 +12,16 @@ describe StreamConsumer::Consumer do
     it "should successfully retrieve JSON records from the firehose" do
 
       expect {
+
 	updater = StreamConsumer::Updater::ConsoleStatsUpdater.new
 	producer = StreamConsumer::Producer::ConsoleDataProducer.new
-	options = { num_producer_threads: NUM_PRODUCER_THREADS, num_consumer_threads: NUM_CONSUMER_THREADS, client_id: CLIENT_ID, stats_updater: updater, data_producer: producer }
-	consumer = StreamConsumer::Consumer.new(options)
 
-	run_options = { url: "#{STREAMURL}?stall_warnings=true", options_factory: HttpStreamingClientOptions.new, run_id: TOPIC_NAME, records_per_batch: 100, min_batch_seconds: 20, signal_prefix_array: SIGNAL_PREFIX_ARRAY, reconnect: false }
+	options = { stats_updater: updater, data_producer: producer, options_factory: HttpStreamingClientOptions.new }
+	consumer = StreamConsumer::Consumer.new(config.merge(options))
 
 	begin
 	  status = Timeout::timeout(TIMEOUT_SEC) {
-	    consumer.run(run_options) { |line,now| calculate_lag(line, now) }
+	    consumer.run { |line,now| calculate_lag(line, now) }
 	  }
 	rescue Timeout::Error
 	  logger.debug "Timeout occurred, #{TIMEOUT_SEC} seconds elapsed"

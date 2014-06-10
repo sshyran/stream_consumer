@@ -34,15 +34,9 @@ module StreamConsumer
 
     include Loggable
 
-    # options:
-    # :num_producer_threads
-    # :num_consumer_threads
-    # :client_id
-    # :stats_updater
-    # :data_producer
-    def initialize(options)
+    def initialize(config)
       HttpStreamingClient.logger = logger
-      @options = options
+      @config = config
       @production_queue = Queue.new
     end
 
@@ -63,7 +57,7 @@ module StreamConsumer
 
 	  now = Time.new
 
-	  @options[:data_producer].produce(thread_id, job.messages) unless @options[:data_producer].nil?
+	  @config[:data_producer].produce(thread_id, job.messages) unless @config[:data_producer].nil?
 	  @stats.add_produced(job.messages.size)
 
 	  msg = "#{job.messages.size} messages produced to run id #{job.run_id}, job id #{job.id}"
@@ -79,37 +73,26 @@ module StreamConsumer
       end
     end
 
-    # options:
-    # :url
-    # :options_factory
-    # :run_id
-    # :records_per_batch
-    # :min_batch_seconds
-    # :signal_prefix_array
-    # :reconnect
-    # :reconnect_interval
-    # :reconnect_attempts
-    def run(run_options, &block)
+    def run(&block)
 
-      @run_options = run_options
-      @run_id = run_options[:run_id]
-      @records_per_batch = run_options[:records_per_batch]
-      @min_batch_seconds = run_options[:min_batch_seconds]
+      @run_id = @config[:kafka][:client_id]
+      @records_per_batch = @config[:records_per_batch]
+      @min_batch_seconds = @config[:min_batch_seconds]
 
       logger.info "-----------------------------------------------------------------"
-      logger.info "url: #{run_options[:url]}"
+      logger.info "url: #{@config.stream_url}"
       logger.info "run_id: #{@run_id}"
-      logger.info "consumer threads: #{@options[:num_consumer_threads]}"
-      logger.info "producer threads: #{@options[:num_producer_threads]}"
+      logger.info "consumer threads: #{@config[:num_consumer_threads]}"
+      logger.info "producer threads: #{@config[:num_producer_threads]}"
       logger.info "-----------------------------------------------------------------"
       
       @running = true
       
-      @stats = Stats.new(@options[:client_id])
-      @stats.start { |checkpoint| @options[:stats_updater].update(checkpoint) unless @options[:stats_updater].nil? }
+      @stats = Stats.new(@config[:kafka][:client_id])
+      @stats.start { |checkpoint| @config[:stats_updater].update(checkpoint) unless @config[:stats_updater].nil? }
 
-      @producer_threads = (1..@options[:num_producer_threads]).map { |i| Thread.new(i) { |thread_id| produce_messages(thread_id) } }
-      @consumer_threads = (1..@options[:num_consumer_threads]).map { |i| Thread.new(i) { |ii| consume_messages(ii, &block) } }
+      @producer_threads = (1..@config[:num_producer_threads]).map { |i| Thread.new(i) { |thread_id| produce_messages(thread_id) } }
+      @consumer_threads = (1..@config[:num_consumer_threads]).map { |i| Thread.new(i) { |ii| consume_messages(ii, &block) } }
 
       @consumer_threads.each { |thread| thread.join }
       @producer_threads.each { |thread| thread.join }
@@ -129,16 +112,16 @@ module StreamConsumer
 	lastTime = nil
 	messages = []
 
-	if @run_options[:reconnect] then
-	  client = HttpStreamingClient::Client.new(compression: true, reconnect: true, reconnect_interval: @run_options[:reconnect_interval], reconnect_attempts: @run_options[:reconnect_attempts])
+	if @config[:reconnect] then
+	  client = HttpStreamingClient::Client.new(compression: true, reconnect: true, reconnect_interval: @config[:reconnect_interval], reconnect_attempts: @config[:reconnect_attempts])
 	else
 	  client = HttpStreamingClient::Client.new(compression: true)
 	end
 
 	startTime = lastTime = Time.new 
 
-	logger.info "client.get:#{@run_options[:url]}, #{@run_options[:options_factory].get_options}"
-	response = client.get(@run_options[:url], { :options_factory => @run_options[:options_factory] }) { |line|
+	logger.info "client.get:#{@config.stream_url}, #{@config[:options_factory].get_options}"
+	response = client.get(@config.stream_url, { :options_factory => @config[:options_factory] }) { |line|
 
 	  if line.nil? then
 	    logger.info "consumer #{thread_id}:error:nil line received for id: #{@run_id}"
@@ -155,9 +138,9 @@ module StreamConsumer
 	    next
 	  end
 
-	  if !@run_options[:signal_prefix_array].nil? then
+	  if !@config[:signal_prefix_array].nil? then
 	    signal_message_received = false
-	    @run_options[:signal_prefix_array].each do |prefix|
+	    @config[:signal_prefix_array].each do |prefix|
 	      if line.start_with? prefix then
 		logger.info "consumer #{thread_id}:Stream signal message received for id:#{@run_id}:#{line}"
 		signal_message_received = true
@@ -169,7 +152,7 @@ module StreamConsumer
 
 	  logger.debug "consumer #{thread_id}:line: #{line}"
 
-	  messages << @options[:data_producer].format(line) unless @options[:data_producer].nil?
+	  messages << @config[:data_producer].format(line) unless @config[:data_producer].nil?
 
 	  totalCount = totalCount + 1
 	  intervalCount = intervalCount + 1
@@ -219,6 +202,7 @@ module StreamConsumer
 
       rescue Exception => e
 	logger.error "Consumer thread #{thread_id}:Exception:#{e}"
+	logger.error "Backtrace:\n\t#{e.backtrace.join("\n\t")}"
       end
     end
 

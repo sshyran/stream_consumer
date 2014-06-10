@@ -9,7 +9,7 @@ describe StreamConsumer::Producer::KafkaDataProducer do
     it "should successfully connect to kafka and produce a message" do
 
       expect {
-	producer = StreamConsumer::Producer::KafkaDataProducer.new(NUM_PRODUCER_THREADS, TOPIC_NAME, CLIENT_ID, KAFKA_BROKER_ARRAY)
+	producer = StreamConsumer::Producer::KafkaDataProducer.new(config[:num_producer_threads], config[:kafka][:topic_name], config[:kafka][:client_id], config[:kafka][:brokers])
 	messages = Array.new
 	messages << producer.format("Test Message")
 	producer.produce(1, messages)

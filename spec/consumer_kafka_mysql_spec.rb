@@ -13,17 +13,15 @@ describe StreamConsumer::Consumer do
 
       expect {
 
-	updater = StreamConsumer::Updater::MysqlStatsUpdater.new(TOPIC_NAME, DATABASE_CONFIG)
-	producer = StreamConsumer::Producer::KafkaDataProducer.new(NUM_PRODUCER_THREADS, TOPIC_NAME, CLIENT_ID, KAFKA_BROKER_ARRAY)
+	updater = StreamConsumer::Updater::MysqlStatsUpdater.new(config[:kafka][:topic_name], config[:database])
+	producer = StreamConsumer::Producer::KafkaDataProducer.new(config[:num_producer_threads], config[:kafka][:topic_name], config[:kafka][:client_id], config[:kafka][:brokers])
 
-	options = { num_producer_threads: NUM_PRODUCER_THREADS, num_consumer_threads: NUM_CONSUMER_THREADS, client_id: CLIENT_ID, stats_updater: updater, data_producer: producer }
-	consumer = StreamConsumer::Consumer.new(options)
-
-	run_options = { url: "#{STREAMURL}?stall_warnings=true", options_factory: HttpStreamingClientOptions.new, run_id: TOPIC_NAME, records_per_batch: 100, min_batch_seconds: 20, signal_prefix_array: SIGNAL_PREFIX_ARRAY, reconnect: false }
+	options = { stats_updater: updater, data_producer: producer, options_factory: HttpStreamingClientOptions.new }
+        consumer = StreamConsumer::Consumer.new(config.merge(options))
 
 	begin
 	  status = Timeout::timeout(TIMEOUT_SEC) {
-	    consumer.run(run_options) { |line,now| calculate_lag(line, now) }
+	    consumer.run { |line,now| calculate_lag(line, now) }
 	  }
 	rescue Timeout::Error
 	  logger.debug "Timeout occurred, #{TIMEOUT_SEC} seconds elapsed"

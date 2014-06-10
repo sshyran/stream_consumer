@@ -30,6 +30,7 @@ module StreamConsumer
   require 'stream_consumer/version'
   require 'stream_consumer/logger'
   require 'stream_consumer/stats'
+  require 'stream_consumer/config'
   require 'stream_consumer/production_job'
   require 'stream_consumer/updater/stats_updater'
   require 'stream_consumer/producer/producer_cache_entry'

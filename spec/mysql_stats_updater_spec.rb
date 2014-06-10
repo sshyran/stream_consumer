@@ -9,7 +9,7 @@ describe StreamConsumer::Updater::MysqlStatsUpdater do
     it "should successfully connect to mysql and udate stats" do
 
       expect {
-	updater = StreamConsumer::Updater::MysqlStatsUpdater.new(TOPIC_NAME, DATABASE_CONFIG)
+	updater = StreamConsumer::Updater::MysqlStatsUpdater.new(config[:kafka][:topic_name], config[:database])
 	updater.update(CHECKPOINT_DATA.merge({timestamp: Time.new}))
       }.to_not raise_error
 
