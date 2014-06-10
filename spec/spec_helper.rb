@@ -27,7 +27,7 @@ def logger
 end
 
 def config
-  StreamConsumer::Config.instance("spec/stream_consumer.conf")
+  StreamConsumer::Config.instance("config/stream_consumer.conf")
 end
 
 TIMEOUT_SEC = 75

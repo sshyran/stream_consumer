@@ -69,8 +69,8 @@ kafka:
 
 database:
   encoding: utf8
-  database: bluejay_development
-  username: bluejay_user
-  password: bluejay123
+  database: <database>
+  username: <username>
+  password: <password>
   host: localhost
   port: 3306
