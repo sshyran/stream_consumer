@@ -1,1 +1,3 @@
-stream_consumer.conf
+stream_consumer_rspec.conf
+twitter_consumer.conf
+adobe_consumer.conf

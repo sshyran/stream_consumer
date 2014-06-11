@@ -47,11 +47,11 @@ module StreamConsumer
 
 	@logger.info "MySqlAdapter(JRuby):database config: #{@config}"
 
-	@host = @config['host'] || "localhost"
-	@port = @config['port'] || "3306"
-	@jdbc_url = "jdbc:mysql://#{@host}:#{@port}/#{@config['database']}"
-	@username = @config['username']
-	@password = @config['password']
+	@host = @config[:host] || "localhost"
+	@port = @config[:port] || "3306"
+	@jdbc_url = "jdbc:mysql://#{@host}:#{@port}/#{@config[:database]}"
+	@username = @config[:username]
+	@password = @config[:password]
 	@connection = nil
       end
 
