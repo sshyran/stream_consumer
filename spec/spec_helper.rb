@@ -14,20 +14,20 @@ include HttpStreamingClient::Credentials::Twitter
 
 require 'stream_consumer'
 
-RSpec.configure do |config|
-  StreamConsumer.logger.console = true
-  StreamConsumer.logger.level = Logger::INFO
-  StreamConsumer.logger.logfile = true
-  StreamConsumer.logger.tag = "rspec"
-  config.filter_run_excluding disabled: true
+def config
+  StreamConsumer::Config.instance("config/stream_consumer_rspec.conf")
 end
 
 def logger
   StreamConsumer.logger
 end
 
-def config
-  StreamConsumer::Config.instance("config/stream_consumer.conf")
+RSpec.configure do |conf|
+  StreamConsumer.logger.logfile = config[:logfile]
+  StreamConsumer.logger.console = true
+  StreamConsumer.logger.level = Logger::INFO
+  StreamConsumer.logger.tag = config[:logtag]
+  conf.filter_run_excluding disabled: true
 end
 
 TIMEOUT_SEC = 75

@@ -9,17 +9,18 @@ require 'stream_consumer/producer/kafka_data_producer'
 require '/opt/rails/bluejay/shared/credentials/credentials'
 include HttpStreamingClient::Credentials::Adobe
 
-StreamConsumer.logger.console = true
-StreamConsumer.logger.level = Logger::INFO
-StreamConsumer.logger.tag = "adobe_consumer"
+def config
+  StreamConsumer::Config.instance("config/adobe_consumer.conf")
+end
 
 def logger
   StreamConsumer.logger
 end
 
-def config
-  StreamConsumer::Config.instance("config/adobe_consumer.conf")
-end
+StreamConsumer.logger.logfile = config[:logfile]
+StreamConsumer.logger.console = false
+StreamConsumer.logger.level = Logger::INFO
+StreamConsumer.logger.tag = config[:logtag]
 
 updater = StreamConsumer::Updater::MysqlStatsUpdater.new(config[:kafka][:topic_name], config[:database])
 producer = StreamConsumer::Producer::KafkaDataProducer.new(config[:num_producer_threads], config[:kafka][:topic_name], config[:kafka][:client_id], config[:kafka][:brokers])

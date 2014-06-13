@@ -13,6 +13,8 @@
 #
 # Optional:
 #
+# logfile
+# logtag
 # stream_params:
 #   <param_name>: <value>
 # reconnect_interval
@@ -49,6 +51,9 @@ min_batch_seconds: 20
 
 stream_params:
   stall_warnings: true
+
+logfile: consumer.log
+logtag: consumer_logtag
 
 signal_prefixes:
   - '{"warning":'

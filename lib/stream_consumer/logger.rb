@@ -57,9 +57,9 @@ module StreamConsumer
       @logfile.method(name).call(args[0]) unless @logfile.nil?
     end
 
-    def logfile=(enable)
-      return (@logfile = nil) if !enable
-      @logfile = Logger.new("test.log")
+    def logfile=(filepath)
+      return (@logfile = nil) if filepath.nil?
+      @logfile = Logger.new(filepath)
       @logfile.formatter = BasicLogFormatter.new
       @logfile.level = Logger::DEBUG
     end
