@@ -34,6 +34,8 @@ module StreamConsumer
 
     include Loggable
 
+    class InterruptRequest < StandardError; end
+
     def initialize(config)
       HttpStreamingClient.logger = logger
       @config = config
@@ -43,6 +45,7 @@ module StreamConsumer
     def halt
       @running = false
       @consumer_threads.each { |thread| thread.join }
+      @producer_threads.each { |thread| thread.raise InterruptRequest.new } # will interrupt producers in Queue.pop
       @producer_threads.each { |thread| thread.join }
       @stats.halt
     end
@@ -66,6 +69,10 @@ module StreamConsumer
 	  elapsed_time = Time.new - now
 	  logger.info "#{msg}, production elapsed time: #{elapsed_time} seconds"
 	end
+	logger.info "producer #{thread_id}:shut down complete: #{Time.new.to_s}"
+	logger.info "producer #{thread_id}:total elapsed time: #{(Time.new - startTime).round(2).to_s} seconds"
+      rescue InterruptRequest
+	logger.info "producer #{thread_id}:interrupt requested"
 	logger.info "producer #{thread_id}:shut down complete: #{Time.new.to_s}"
 	logger.info "producer #{thread_id}:total elapsed time: #{(Time.new - startTime).round(2).to_s} seconds"
       rescue Exception => e
