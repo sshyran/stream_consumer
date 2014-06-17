@@ -32,6 +32,8 @@ module StreamConsumer
 
     include Loggable
 
+    class InterruptRequest < StandardError; end
+
     DEFAULT_STATS_CHECKPOINT_INTERVAL = 60
 
     attr_accessor :last_time
@@ -69,17 +71,10 @@ module StreamConsumer
     end
 
     def checkpoint
-      params = Hash.new
+      params = nil
       @mutex.synchronize {
-	now = Time.new
-	elapsed_time = now - @last_time
-	params[:tag] = @tag unless @tag.nil?
-	params[:messages_consumed_per_sec] = (@messages_consumed / elapsed_time).round(2)
-	params[:messages_produced_per_sec] = (@messages_produced / elapsed_time).round(2)
-	params[:kbytes_consumed_per_sec] = (@bytes_consumed / elapsed_time / 1024).round(2)
-	params[:lag] = @lag.round(3)
-	params[:timestamp] = now
-	clear(now)
+	params = tally
+	clear(Time.new)
       }
       return params
     end
@@ -87,32 +82,46 @@ module StreamConsumer
     def start(checkpoint_interval = DEFAULT_STATS_CHECKPOINT_INTERVAL, &checkpoint_callback)
       @checkpoint_interval = checkpoint_interval
       @checkpoint_callback = checkpoint_callback
-      @running = true
       @thread = Thread.new { process_stats }
     end
 
     def halt
-      return unless @running
-      @running = false
-      @thread.wakeup
+      @thread.raise InterruptRequest.new "Interrupt Request"
       @thread.join
     end
 
     def process_stats
       begin
-	while @running
+	while true
 	  sleep @checkpoint_interval
-	  break if !@running
 	  cp = checkpoint
 	  logger.info "Checkpoint: #{cp}"
 	  @checkpoint_callback.call(cp) unless @checkpoint_callback.nil?
 	end
-	cp = checkpoint
+      rescue InterruptRequest
+	logger.info "stats:interrupt requested"
+	cp = tally
 	logger.info "Final checkpoint: #{cp}"
 	@checkpoint_callback.call(cp) unless @checkpoint_callback.nil?
+	logger.info "stats:shut down complete: #{Time.new.to_s}"
       rescue Exception => e
 	logger.error "Process stats thread:Exception:#{e}"
       end
+    end
+
+    protected
+
+    def tally
+      params = Hash.new
+      now = Time.new
+      elapsed_time = now - @last_time
+      params[:tag] = @tag unless @tag.nil?
+      params[:messages_consumed_per_sec] = (@messages_consumed / elapsed_time).round(2)
+      params[:messages_produced_per_sec] = (@messages_produced / elapsed_time).round(2)
+      params[:kbytes_consumed_per_sec] = (@bytes_consumed / elapsed_time / 1024).round(2)
+      params[:lag] = @lag.round(3)
+      params[:timestamp] = now
+      params
     end
 
   end
