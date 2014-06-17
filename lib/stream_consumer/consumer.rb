@@ -43,6 +43,7 @@ module StreamConsumer
     end
 
     def halt
+      @consumer_threads.each { |thread| thread[:client].interrupt }
       @consumer_threads.each { |thread| thread.raise InterruptRequest.new "Interrupt Request" }
       @consumer_threads.each { |thread| thread.join }
 
@@ -123,6 +124,8 @@ module StreamConsumer
 	else
 	  client = HttpStreamingClient::Client.new(compression: true)
 	end
+
+	Thread.current[:client] = client
 
 	startTime = lastTime = Time.new 
 
