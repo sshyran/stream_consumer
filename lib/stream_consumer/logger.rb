@@ -50,10 +50,7 @@ module StreamConsumer
     end
 
     def method_missing(name, *args)
-      if !@console.nil?
-	@console.method(name).call(args) unless name.to_s =~ /(unknown|fatal|error|warn|info|debug)/
-	@console.method(name).call(args[0])
-      end
+      @console.method(name).call(args[0]) unless @console.nil?
       @logfile.method(name).call(args[0]) unless @logfile.nil?
     end
 

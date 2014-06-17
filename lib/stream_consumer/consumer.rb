@@ -43,12 +43,10 @@ module StreamConsumer
     end
 
     def halt
-      @consumer_threads.each { |thread| thread[:running] = false }
-      @producer_threads.each { |thread| thread.raise InterruptRequest.new if thread[:waiting] }
+      @consumer_threads.each { |thread| thread.raise InterruptRequest.new "Interrupt Request" }
       @consumer_threads.each { |thread| thread.join }
 
-      @producer_threads.each { |thread| thread[:running] = false }
-      @producer_threads.each { |thread| thread.raise InterruptRequest.new if thread[:waiting] }
+      @producer_threads.each { |thread| thread.raise InterruptRequest.new "Interrupt Request"}
       @producer_threads.each { |thread| thread.join }
 
       @stats.halt
@@ -58,18 +56,13 @@ module StreamConsumer
       begin
 	startTime = Time.new 
 	logger.info "starting producer #{thread_id} for id #{@run_id}: #{startTime.to_s}"
-	while Thread.current[:running]
-	  Thread.current[:waiting] = true
+	while true
 	  job = @production_queue.pop
-	  Thread.current[:waiting] = false
 	  logger.info "Production job accepted: thread #{thread_id}, job id #{job.id}, run id #{job.run_id}"
-
 	  now = Time.new
 
 	  @config[:data_producer].produce(thread_id, job.messages) unless @config[:data_producer].nil?
-	  Thread.current[:waiting] = true
 	  @stats.add_produced(job.messages.size)
-	  Thread.current[:waiting] = false
 	  msg = "#{job.messages.size} messages produced to run id #{job.run_id}, job id #{job.id}"
 
 	  job.clear
@@ -104,19 +97,8 @@ module StreamConsumer
       @stats = Stats.new(@config[:kafka][:client_id])
       @stats.start { |checkpoint| @config[:stats_updater].update(checkpoint) unless @config[:stats_updater].nil? }
 
-      @producer_threads = (1..@config[:num_producer_threads]).map do |i|
-	Thread.new(i) do |thread_id|
-	  Thread.current[:running] = true
-	  produce_messages(thread_id)
-	end
-      end
-
-      @consumer_threads = (1..@config[:num_consumer_threads]).map do |i|
-	Thread.new(i) do |thread_id|
-	  Thread.current[:running] = true
-	  consume_messages(thread_id, &block)
-	end
-      end
+      @producer_threads = (1..@config[:num_producer_threads]).map { |i| Thread.new(i) { |thread_id| produce_messages(thread_id) } }
+      @consumer_threads = (1..@config[:num_consumer_threads]).map { |i| Thread.new(i) { |thread_id| consume_messages(thread_id, &block) } }
 
       @consumer_threads.each { |thread| thread.join }
       @producer_threads.each { |thread| thread.join }
@@ -182,18 +164,13 @@ module StreamConsumer
 	  intervalCount = intervalCount + 1
 	  intervalSize = intervalSize + line.size
 
-	  if (totalCount % @records_per_batch) == 0 or !Thread.current[:running] then
-
-	    if !Thread.current[:running] then
-	      logger.info "consumer #{thread_id}:shutting down, interrupted: #{Time.new.to_s}"
-	      client.interrupt
-	    end
+	  if (totalCount % @records_per_batch) == 0 then
 
 	    now = Time.new
 
-	    if Thread.current[:running] then
-	      logger.debug "consumer #{thread_id}:next because < @min_batch_seconds" if (now - lastTime) < @min_batch_seconds
-	      next if (now - lastTime) < @min_batch_seconds
+	    if (now - lastTime) < @min_batch_seconds then
+	      logger.debug "consumer #{thread_id}:next because < @min_batch_seconds"
+	      next
 	    end
 
 	    lag = -1 # lag unknown
@@ -203,9 +180,7 @@ module StreamConsumer
 	      logger.debug "consumer #{thread_id}:lag handler called, calculated lag: #{lag}"
 	    end
 
-	    Thread.current[:waiting] = true
 	    @stats.add_consumed(intervalCount, intervalSize, lag)
-	    Thread.current[:waiting] = false
 
 	    intervalElapsedTime = now - lastTime
 
@@ -213,9 +188,7 @@ module StreamConsumer
 
 	    production_job = ProductionJob.new(@run_id, messages, message_set_params)
 	    logger.info "consumer #{thread_id}:enqueuing production job, #{messages.size} messages for #{@run_id}, job id #{production_job.id}, queue length #{@production_queue.length}"
-	    Thread.current[:waiting] = true
 	    @production_queue << production_job
-	    Thread.current[:waiting] = false
 
 	    production_job = nil
 	    messages = []
@@ -228,6 +201,10 @@ module StreamConsumer
 	logger.info "consumer #{thread_id}:shut down complete: #{Time.new.to_s}"
 	logger.info "consumer #{thread_id}:total elapsed time: #{(Time.new - startTime).round(2).to_s} seconds"
 
+      rescue InterruptRequest
+	logger.info "consumer #{thread_id}:interrupt requested"
+	#client.interrupt
+	logger.info "consumer #{thread_id}:shut down complete: #{Time.new.to_s}"
       rescue Exception => e
 	logger.error "Consumer thread #{thread_id}:Exception:#{e}"
 	logger.error "Backtrace:\n\t#{e.backtrace.join("\n\t")}"
