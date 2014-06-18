@@ -129,7 +129,7 @@ module StreamConsumer
       @consumer_threads.each { |thread| thread.join }
       @producer_threads.each { |thread| thread.join }
       @stats.halt
-      @debug.kill
+      @debug.kill if defined? @debug
 
     end
 
