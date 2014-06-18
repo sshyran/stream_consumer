@@ -51,6 +51,8 @@ module StreamConsumer
       @producer_threads.each { |thread| thread.join }
 
       @stats.halt
+      
+      @debug.raise InterruptRequest.new "Interrupt Request" if defined? @debug
     end
 
     def produce_messages(thread_id)
@@ -82,6 +84,27 @@ module StreamConsumer
       end
     end
 
+    def debug_threads
+      begin
+	sleep 30
+	logger.info "-----------------------------------"
+	@consumer_threads.each do |thread|
+	  logger.info "----consumer #{thread[:thread_id]}:"
+	  thread.backtrace.each { |line| logger.info line }
+	end
+	@producer_threads.each do |thread|
+	  logger.info "----producer #{thread[:thread_id]}:"
+	  thread.backtrace.each { |line| logger.info line }
+	end
+	logger.info "----stats thread"
+	@stats.backtrace.each { |line| logger.info line }
+	logger.info "-----------------------------------"
+      rescue InterruptRequest
+	logger.info "debug_threads:interrupt requested"
+	logger.info "debug_threads:shut down complete: #{Time.new.to_s}"
+      end
+    end
+
     def run(&block)
 
       @run_id = @config[:kafka][:client_id]
@@ -98,12 +121,15 @@ module StreamConsumer
       @stats = Stats.new(@config[:kafka][:client_id])
       @stats.start { |checkpoint| @config[:stats_updater].update(checkpoint) unless @config[:stats_updater].nil? }
 
-      @producer_threads = (1..@config[:num_producer_threads]).map { |i| Thread.new(i) { |thread_id| produce_messages(thread_id) } }
-      @consumer_threads = (1..@config[:num_consumer_threads]).map { |i| Thread.new(i) { |thread_id| consume_messages(thread_id, &block) } }
+      @producer_threads = (1..@config[:num_producer_threads]).map { |i| Thread.new(i) { |thread_id| Thread.current[:thread_id] = thread_id; produce_messages(thread_id) } }
+      @consumer_threads = (1..@config[:num_consumer_threads]).map { |i| Thread.new(i) { |thread_id| Thread.current[:thread_id] = thread_id; consume_messages(thread_id, &block) } }
+
+      @debug = Thread.new { debug_threads } if @config[:debug_threads]
 
       @consumer_threads.each { |thread| thread.join }
       @producer_threads.each { |thread| thread.join }
       @stats.halt
+      @debug.kill
 
     end
 

@@ -85,6 +85,10 @@ module StreamConsumer
       @thread = Thread.new { process_stats }
     end
 
+    def backtrace
+      @thread.backtrace
+    end
+
     def halt
       @thread.raise InterruptRequest.new "Interrupt Request"
       @thread.join
