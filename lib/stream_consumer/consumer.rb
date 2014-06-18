@@ -52,7 +52,10 @@ module StreamConsumer
 
       @stats.halt
 
-      @debug.raise InterruptRequest.new "Interrupt Request" if defined? @debug
+      @debug_thread.raise InterruptRequest.new "Interrupt Request" if defined? @debug_thread
+      @debug_thread.join
+
+      logger.info "Shutdown (halt) complete: #{Time.new.to_s}"
     end
 
     def produce_messages(thread_id)
@@ -61,12 +64,12 @@ module StreamConsumer
 	logger.info "starting producer #{thread_id} for id #{@run_id}: #{startTime.to_s}"
 	while true
 	  job = @production_queue.pop
-	  logger.info "Production job accepted: thread #{thread_id}, job id #{job.id}, run id #{job.run_id}"
+	  logger.info "producer #{thread_id}:production job accepted: job id #{job.id}, run id #{job.run_id}"
 	  now = Time.new
 
 	  @config[:data_producer].produce(thread_id, job.messages) unless @config[:data_producer].nil?
 	  @stats.add_produced(job.messages.size)
-	  msg = "#{job.messages.size} messages produced to run id #{job.run_id}, job id #{job.id}"
+	  msg = "producer #{thread_id}:#{job.messages.size} messages produced to run id #{job.run_id}, job id #{job.id}"
 
 	  job.clear
 	  job = nil
@@ -84,11 +87,11 @@ module StreamConsumer
       end
     end
 
-    def debug_threads
+    def debug_threads(interval = 30)
       begin
 	while true
-	  sleep 30
-	  logger.info "-----------------------------------"
+	  sleep interval
+	  logger.info "--debug thread backtrace-----------"
 	  @consumer_threads.each do |thread|
 	    logger.info "----consumer #{thread[:thread_id]}:"
 	    thread.backtrace.each { |line| logger.info line }
@@ -126,13 +129,14 @@ module StreamConsumer
       @producer_threads = (1..@config[:num_producer_threads]).map { |i| Thread.new(i) { |thread_id| Thread.current[:thread_id] = thread_id; produce_messages(thread_id) } }
       @consumer_threads = (1..@config[:num_consumer_threads]).map { |i| Thread.new(i) { |thread_id| Thread.current[:thread_id] = thread_id; consume_messages(thread_id, &block) } }
 
-      @debug = Thread.new { debug_threads } if @config[:debug_threads]
+      @debug_thread = Thread.new { debug_threads(config[:debug_threads]) } if @config[:debug_threads]
 
       @consumer_threads.each { |thread| thread.join }
       @producer_threads.each { |thread| thread.join }
       @stats.halt
-      @debug.kill if defined? @debug
+      @debug_thread.kill if defined? @debug_thread
 
+      logger.info "Shutdown (exit) complete: #{Time.new.to_s}"
     end
 
     def consume_messages(thread_id, &block)

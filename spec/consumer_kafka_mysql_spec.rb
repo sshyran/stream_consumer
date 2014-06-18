@@ -16,6 +16,7 @@ describe StreamConsumer::Consumer do
 	updater = StreamConsumer::Updater::MysqlStatsUpdater.new(config[:kafka][:topic_name], config[:database])
 	producer = StreamConsumer::Producer::KafkaDataProducer.new(config[:num_producer_threads], config[:kafka][:topic_name], config[:kafka][:client_id], config[:kafka][:brokers])
 
+	config[:run_id] = config[:kafka][:topic_name]
 	options = { stats_updater: updater, data_producer: producer, options_factory: HttpStreamingClientOptions.new }
         consumer = StreamConsumer::Consumer.new(config.merge(options))
 

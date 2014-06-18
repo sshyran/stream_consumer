@@ -41,7 +41,7 @@ module StreamConsumer
       end
 
       def produce(thread_id, messages)
-	logger.info "#{messages.size} of #{@count} messages produced for thread #{thread_id}"
+	logger.info "producer #{thread_id}:#{messages.size} of #{@count} messages produced for thread #{thread_id}"
       end
 
     end
