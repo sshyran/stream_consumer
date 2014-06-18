@@ -51,7 +51,7 @@ module StreamConsumer
       @producer_threads.each { |thread| thread.join }
 
       @stats.halt
-      
+
       @debug.raise InterruptRequest.new "Interrupt Request" if defined? @debug
     end
 
@@ -86,19 +86,21 @@ module StreamConsumer
 
     def debug_threads
       begin
-	sleep 30
-	logger.info "-----------------------------------"
-	@consumer_threads.each do |thread|
-	  logger.info "----consumer #{thread[:thread_id]}:"
-	  thread.backtrace.each { |line| logger.info line }
+	while true
+	  sleep 30
+	  logger.info "-----------------------------------"
+	  @consumer_threads.each do |thread|
+	    logger.info "----consumer #{thread[:thread_id]}:"
+	    thread.backtrace.each { |line| logger.info line }
+	  end
+	  @producer_threads.each do |thread|
+	    logger.info "----producer #{thread[:thread_id]}:"
+	    thread.backtrace.each { |line| logger.info line }
+	  end
+	  logger.info "----stats thread"
+	  @stats.backtrace.each { |line| logger.info line }
+	  logger.info "-----------------------------------"
 	end
-	@producer_threads.each do |thread|
-	  logger.info "----producer #{thread[:thread_id]}:"
-	  thread.backtrace.each { |line| logger.info line }
-	end
-	logger.info "----stats thread"
-	@stats.backtrace.each { |line| logger.info line }
-	logger.info "-----------------------------------"
       rescue InterruptRequest
 	logger.info "debug_threads:interrupt requested"
 	logger.info "debug_threads:shut down complete: #{Time.new.to_s}"
