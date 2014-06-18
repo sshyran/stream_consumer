@@ -112,7 +112,7 @@ module StreamConsumer
 
     def run(&block)
 
-      @run_id = @config[:kafka][:client_id]
+      @run_id = @config[:run_id]
       @records_per_batch = @config[:records_per_batch]
       @min_batch_seconds = @config[:min_batch_seconds]
 
@@ -123,7 +123,7 @@ module StreamConsumer
       logger.info "producer threads: #{@config[:num_producer_threads]}"
       logger.info "-----------------------------------------------------------------"
 
-      @stats = Stats.new(@config[:kafka][:client_id])
+      @stats = Stats.new(@run_id)
       @stats.start { |checkpoint| @config[:stats_updater].update(checkpoint) unless @config[:stats_updater].nil? }
 
       @producer_threads = (1..@config[:num_producer_threads]).map { |i| Thread.new(i) { |thread_id| Thread.current[:thread_id] = thread_id; produce_messages(thread_id) } }

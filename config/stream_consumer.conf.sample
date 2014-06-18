@@ -4,6 +4,7 @@
 #
 # Required:
 #
+# run_id
 # stream_url
 # reconnect (true/false)
 # num_consumer_threads
@@ -22,6 +23,7 @@
 # signal_prefixes
 # date_prefix
 # date_format
+# debug_threads
 #
 # kafka:
 #   topic_name
@@ -39,6 +41,10 @@
 #   port
 #
 #########################################
+
+run_id: rspec_run_id_tag
+
+debug_threads: 300
 
 stream_url: https://stream.twitter.com/1.1/statuses/sample.json
 reconnect: false
