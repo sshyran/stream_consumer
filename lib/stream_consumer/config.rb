@@ -42,8 +42,9 @@ module StreamConsumer
     end
 
     def stream_url
-      return self[:stream_url] if self[:stream_params].nil?
-      return self[:stream_url]+"?"+to_params(stream_params)
+      return @stream_url if defined? @stream_url
+      return @stream_url = self[:stream_url] if self[:stream_params].nil?
+      return @stream_url = self[:stream_url]+"?"+to_params(stream_params)
     end
 
     def stream_params
