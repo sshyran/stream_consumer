@@ -42,10 +42,12 @@ module StreamConsumer
       @production_queue = Queue.new
     end
 
-    def halt
-      @consumer_threads.each { |thread| thread[:client].interrupt }
-      @consumer_threads.each { |thread| thread.raise InterruptRequest.new "Interrupt Request" }
-      @consumer_threads.each { |thread| thread.join }
+    def halt(halt_consumers = true)
+      if halt_consumers then
+        @consumer_threads.each { |thread| thread[:client].interrupt }
+        @consumer_threads.each { |thread| thread.raise InterruptRequest.new "Interrupt Request" }
+        @consumer_threads.each { |thread| thread.join }
+      end
 
       @producer_threads.each { |thread| thread.raise InterruptRequest.new "Interrupt Request"}
       @producer_threads.each { |thread| thread.join }
@@ -53,7 +55,7 @@ module StreamConsumer
       @stats.halt
 
       @debug_thread.raise InterruptRequest.new "Interrupt Request" if defined? @debug_thread
-      @debug_thread.join
+      @debug_thread.join if defined? @debug_thread
 
       logger.info "Shutdown (halt) complete: #{Time.new.to_s}"
     end
@@ -132,11 +134,10 @@ module StreamConsumer
       @debug_thread = Thread.new { debug_threads(config[:debug_threads]) } if @config[:debug_threads]
 
       @consumer_threads.each { |thread| thread.join }
-      @producer_threads.each { |thread| thread.join }
-      @stats.halt
-      @debug_thread.kill if defined? @debug_thread
 
-      logger.info "Shutdown (exit) complete: #{Time.new.to_s}"
+      # initiate full shutdown if all consumer threads have stopped
+      halt(false)
+      logger.info "Shutdown (all consumers exited) complete: #{Time.new.to_s}"
     end
 
     def consume_messages(thread_id, &block)
