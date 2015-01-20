@@ -69,7 +69,7 @@ StreamConsumer.logger.logfile = "test.log"
 To set the log level, specify the following in your code (e.g. to set the log level to :debug):
 ```
 StreamConsumer.logger.level = Logger::DEBUG
- ```
+```
 
 To set a custom log tag for logging, specify the following in your code:
 ```
