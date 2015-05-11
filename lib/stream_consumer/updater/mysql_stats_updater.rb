@@ -38,14 +38,15 @@ module StreamConsumer
       end
 
       def update(checkpoint)
-	query = "insert into `inbound_stats_v2` (`created_at`, `inbound_id`, `consumed_records_per_sec`, `consumed_kbytes_per_sec`, `produced_records_per_sec`, `message_lag`) values ('#{checkpoint[:timestamp].utc.strftime('%Y-%m-%d %H:%M:%S')}', #{@inbound[:inbound_id]}, #{checkpoint[:messages_consumed_per_sec]}, #{checkpoint[:kbytes_consumed_per_sec]}, #{checkpoint[:messages_produced_per_sec]}, #{checkpoint[:lag]})"
+	query = "insert into `inbound_stats_v2` (`created_at`, `inbound_id`, `consumed_records_per_sec`, `consumed_kbytes_per_sec`, `produced_records_per_sec`, `message_lag`) values ('#{checkpoint[:timestamp].utc.strftime('%Y-%m-%d %H:%M:%S')}', #{@inbound[:id]}, #{checkpoint[:messages_consumed_per_sec]}, #{checkpoint[:kbytes_consumed_per_sec]}, #{checkpoint[:messages_produced_per_sec]}, #{checkpoint[:lag]})"
 	@database_adapter.update(query)
       end
 
       protected
 
       def get_inbound(topic_name)
-	query = "select t1.id,t2.* from inbounds t1 inner join topics t2 where t2.name='#{topic_name}' and t1.id = t2.inbound_id;"
+	query = "select t1.* from inbounds where t1.topic_name='#{topic_name}';"
+	#query = "select t1.id,t2.* from inbounds t1 inner join topics t2 where t2.name='#{topic_name}' and t1.id = t2.inbound_id;"
 	@database_adapter.query(query).first
       end
 
