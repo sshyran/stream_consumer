@@ -45,7 +45,7 @@ module StreamConsumer
       protected
 
       def get_inbound(topic_name)
-	query = "select t1.* from inbounds where t1.topic_name='#{topic_name}';"
+	query = "select t1.* from inbounds t1 where t1.topic_name='#{topic_name}';"
 	#query = "select t1.id,t2.* from inbounds t1 inner join topics t2 where t2.name='#{topic_name}' and t1.id = t2.inbound_id;"
 	@database_adapter.query(query).first
       end

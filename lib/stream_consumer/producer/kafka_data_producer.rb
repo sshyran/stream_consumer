@@ -33,6 +33,8 @@ module StreamConsumer
 
     class KafkaDataProducer < DataProducer
 
+      SOCKET_TIMEOUT_MS = 10000
+
       def initialize(num_producer_threads, topic_name, client_id, broker_array)
 	@producers = (1..num_producer_threads).map { |i| ProducerCacheEntry.new(nil) }
 	@topic_name = topic_name
@@ -56,7 +58,7 @@ module StreamConsumer
       def get_kafka_broker_pool
 	return @@broker_pool if !@@broker_pool.nil?
 	begin
-	  @@broker_pool = Poseidon::BrokerPool.new(@client_id, @broker_array.map { |broker| "#{broker[:hostname]}:#{broker[:port]}" })
+	  @@broker_pool = Poseidon::BrokerPool.new(@client_id, @broker_array.map { |broker| "#{broker[:hostname]}:#{broker[:port]}" }, SOCKET_TIMEOUT_MS)
 	  return @@broker_pool
 	rescue Exception => e
 	  logger.error "get_kafka_broker_pool:exception creating broker pool:#{e}"
